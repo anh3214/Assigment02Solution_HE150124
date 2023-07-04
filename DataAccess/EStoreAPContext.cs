@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace DataAccess
 {
-    public class EStoreAPContext : IdentityUserContext<User>
+    public class EStoreAPContext : IdentityDbContext<User>
     {
         public EStoreAPContext(DbContextOptions<EStoreAPContext> options) : base(options)
         {

@@ -22,7 +22,20 @@ namespace DataAccess
         {
             _configuration = configuration;
         }
+        public JwtSecurityToken GetToken(List<Claim> authClaims)
+        {
+            var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Key"]));
 
+            var token = new JwtSecurityToken(
+                issuer: _configuration["JWT:Issuer"],
+                audience: _configuration["JWT:Audience"],
+                expires: DateTime.Now.AddHours(3),
+                claims: authClaims,
+                signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
+                );
+
+            return token;
+        }
         public AuthenticationResponse CreateToken(IdentityUser user)
         {
             var expiration = DateTime.UtcNow.AddMinutes(EXPIRATION_MINUTES);

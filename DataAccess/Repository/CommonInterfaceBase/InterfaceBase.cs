@@ -11,6 +11,7 @@ namespace DataAccess.Repository
         public Task<IEnumerable<T>> GetList();
         public Task<bool> Update(T newValue);
         public Task<bool> Delete(Guid id);
+        public Task<bool> Add(T id);
         public Task<T> GetById(Guid id);
     }
 }

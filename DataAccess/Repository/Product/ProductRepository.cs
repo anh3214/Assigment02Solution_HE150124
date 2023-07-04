@@ -10,6 +10,18 @@ namespace DataAccess.Repository
         {
             _context = context;
         }
+
+        public async Task<bool> Add(Product product)
+        {
+            await _context.Products.AddAsync(product);
+            bool result = await _context.SaveChangesAsync() > 0;
+            if (!result)
+            {
+                return false;
+            }
+            return true;
+        }
+
         public async Task<bool> Delete(Guid id)
         {
             var product = await _context.Products.Where(x => x.ProductId == id).FirstOrDefaultAsync();
@@ -25,7 +37,7 @@ namespace DataAccess.Repository
 
         public async Task<Product> GetById(Guid id)
         {
-            var product = await _context.Products.Where(x => x.ProductId == id).FirstOrDefaultAsync();
+            var product = await _context.Products.Where(x => x.ProductId == id).Include(x => x.Category).FirstOrDefaultAsync();
             if(product != null)
             {
                 return product;
@@ -35,7 +47,7 @@ namespace DataAccess.Repository
 
         public async Task<IEnumerable<Product>> GetList()
         {
-            var product = await _context.Products.ToListAsync();
+            var product = await _context.Products.Include(x => x.Category).OrderBy(x => x.ProductName).ToListAsync();
             if(product.Count > 0)
             {
                 return product;

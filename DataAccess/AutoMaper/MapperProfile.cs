@@ -1,11 +1,5 @@
 ﻿using AutoMapper;
 using BusinessObject;
-using Microsoft.EntityFrameworkCore.Design;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DataAccess
 {
@@ -18,6 +12,11 @@ namespace DataAccess
                 .ForMember(dest => dest.CategoryId, opt => opt.MapFrom(src => src.CategoryId.ToString()));
             #endregion
             #region Product
+            CreateMap<Product, ProductDto>()
+                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.CategoryName));
+            CreateMap<ProductAddDto, Product>()
+                .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => Guid.NewGuid()))
+                .ForMember(dest => dest.CategoryId, opt => opt.MapFrom(src => Guid.Parse(src.CategoryId)));
             #endregion
             #region User
             #endregion

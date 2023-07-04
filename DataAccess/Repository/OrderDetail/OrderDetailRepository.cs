@@ -10,6 +10,12 @@ namespace DataAccess.Repository
         {
             _context = context;
         }
+
+        public Task<bool> Add(OrderDetail id)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<bool> Delete(Guid id)
         {
             var orderDetail = await _context.OrderDetails.Where(x => x.OrderId == id).FirstOrDefaultAsync();

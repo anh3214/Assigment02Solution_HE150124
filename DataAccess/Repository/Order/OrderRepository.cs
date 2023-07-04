@@ -15,6 +15,12 @@ namespace DataAccess.Repository
         {
             _context = context;
         }
+
+        public Task<bool> Add(Order id)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<bool> Delete(Guid id)
         {
             var order = await _context.Orders.Where(x => x.OrderId == id).FirstOrDefaultAsync();

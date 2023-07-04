@@ -1,0 +1,130 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="container mt-3">
+    <h2>Products</h2>
+    <table class="table table-hover" id="productTable">
+        <thead>
+            <tr>
+                <th>Product Name</th>
+                <th>Category Name</th>
+                <th>Unit Price</th>
+                <th>Unit Stock</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    
+    <script>
+        function getProducts() {
+            $('#spinner').show();
+            $.ajax({
+                url: 'https://localhost:44342/api/Product', // Đường dẫn đến action trong controller để lấy dữ liệu sản phẩm
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    var tableBody = $('#productTable tbody'); // Lấy thẻ tbody của bảng
+                    tableBody.empty(); // Xóa dữ liệu cũ trong tbody
+                    // Lặp qua dữ liệu sản phẩm và thêm vào bảng
+                    for (var i = 0; i < data.result.length; i++) {
+                        var product = data.result[i];
+                        var row = '<tr>' +
+                            '<td>' + product.productName + '</td>' +
+                            '<td>' + product.categoryName + '</td>' +
+                            '<td>' + product.unitPrice + '</td>' +
+                            '<td>' + product.unitStock + '</td>' +
+                            '<td>'+
+                            '<a id="add" title="Add" data-toggle="tooltip" data-popup-id="add_product" data-bs-toggle="modal" data-bs-target="#exampleModal"><ion-icon name="add-circle-outline"></ion-icon></a>' +
+                            '<a id="edit" title="Edit" data-toggle="tooltip" class="ajax-button" data-url="/Product/detailProduct/" data-id='+product.productId+'><ion-icon name="eye-outline"></ion-icon></a>' +
+                            '<a id="delete" title="Delete" data-toggle="tooltip" class="ajax-button" data-url="/Product/delete/" data-id=' + product.productId + '><ion-icon name="trash-outline"></ion-icon></a>' +
+                            '</td>' +
+                            '</tr>';
+                        tableBody.append(row);
+                    }
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }
+        function getCategory(){
+            $.ajax({
+                url: 'https://localhost:44342/api/Category/categoryList', // Đường dẫn đến action trong controller để lấy dữ liệu sản phẩm
+                type: 'GET',
+                dataType: 'json',
+                success: function (response) {
+                    // Handle the response and append the data to the select checkbox
+                    appendDataToSelectCheckbox(response);
+                },
+                error: function (error) {
+                    console.log('Error:', error);
+                }
+            });
+        }
+        // Gọi function để lấy dữ liệu và gán vào bảng khi trang được load
+        $(document).ready(function () {
+            getProducts();
+            getCategory();
+            $('#spinner').hide();
+        });
+        function addProduct(event) {
+            event.preventDefault(); // Chặn hành vi mặc định của form
+
+            // Gọi AJAX tại đây và xử lý kết quả
+            $('#spinner').show();
+            // Ví dụ:
+            
+            var data = {
+                productName: document.getElementById('productName').value,
+                categoryId: document.getElementById('inputCategory').value, 
+                unitPrice: document.getElementById('inputPrice').value,
+                unitStock: document.getElementById('inputStock').value
+            };
+            // Gửi AJAX request
+            sendAjaxRequest('POST', 'https://localhost:44342/api/Product/addProduct', data);
+            
+            getProducts();
+            $('#spinner').hide();
+        }
+    </script>
+    <!--
+        Model
+    -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <form id="popup-form" class="row g-3" onsubmit="addProduct(event)">
+                        <div class="col-md-6">
+                            <label for="productName" class="form-label">Product Name</label>
+                            <input type="text" class="form-control" id="productName">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="inputCategory" class="form-label">Category</label>
+                            <select id="inputCategory" class="form-select">
+                                <option selected>Choose...</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="inputPrice" class="form-label">Unit Price</label>
+                            <input type="number" class="form-control" id="inputPrice" placeholder="1234">
+                        </div>
+                        <div class="col-12">
+                            <label for="inputStock" class="form-label">Unit Stock</label>
+                            <input type="number" class="form-control" id="inputStock" placeholder="1245">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancle</button>
+                            <button type="submit" class="btn btn-primary">Add</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+

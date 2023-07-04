@@ -15,6 +15,12 @@ namespace DataAccess.Repository
         {
             _context = context;
         }
+
+        public Task<bool> Add(Category id)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<bool> Delete(Guid id)
         {
             var category = await _context.Categories.Where(x => x.CategoryId == id).FirstOrDefaultAsync();

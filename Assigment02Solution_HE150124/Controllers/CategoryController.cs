@@ -1,6 +1,6 @@
 ﻿using BusinessObject;
-using DataAccess.Repository;
 using DataAccess.Service;
+using DataAccess.Service.Token;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,7 +18,7 @@ namespace eStoreAP.Controllers
         {
             _categoryService = categoryService;
         }
-        [Authorize]
+        [Authorize(Roles = UserRoles.User)]
         [HttpGet("categoryList")]
         public async Task<IActionResult> Get()
         {

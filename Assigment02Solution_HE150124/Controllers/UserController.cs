@@ -1,9 +1,11 @@
 ﻿using BusinessObject;
+using BusinessObject.Dto;
 using DataAccess;
+using DataAccess.Service.Token;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace eStoreAP.Controllers
 {
@@ -12,20 +14,110 @@ namespace eStoreAP.Controllers
     public class UserController : ControllerBase
     {
         private readonly UserManager<User> _userManager;
-        private readonly JwtService _jwtService;
+        private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly JwtService _jwt;
+        private readonly IConfiguration _configuration;
 
         public UserController(
             UserManager<User> userManager,
-            JwtService jwtService
-        )
+            RoleManager<IdentityRole> roleManager,
+            IConfiguration configuration,
+            JwtService jwt)
         {
             _userManager = userManager;
-            _jwtService = jwtService;
+            _roleManager = roleManager;
+            _configuration = configuration;
+            _jwt = jwt;
+        }
+
+        [HttpPost]
+        [Route("login")]
+        public async Task<IActionResult> Login([FromBody] LoginModel model)
+        {
+            var user = await _userManager.FindByNameAsync(model.Username);
+            if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
+            {
+                var userRoles = await _userManager.GetRolesAsync(user);
+
+                var authClaims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, user.UserName),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                };
+
+                foreach (var userRole in userRoles)
+                {
+                    authClaims.Add(new Claim(ClaimTypes.Role, userRole));
+                }
+
+                var token = _jwt.GetToken(authClaims);
+
+                return Ok(new
+                {
+                    token = new JwtSecurityTokenHandler().WriteToken(token),
+                    expiration = token.ValidTo
+                });
+            }
+            return Unauthorized();
+        }
+
+        [HttpPost]
+        [Route("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterModel model)
+        {
+            var userExists = await _userManager.FindByNameAsync(model.Username);
+            if (userExists != null)
+                return StatusCode(StatusCodes.Status500InternalServerError, new ResponeBase<RegisterModel> { Status = ResponeStatus.InternalServer, Message = "User already exists!" });
+
+            User user = new()
+            {
+                Email = model.Email,
+                SecurityStamp = Guid.NewGuid().ToString(),
+                UserName = model.Username
+            };
+            var result = await _userManager.CreateAsync(user, model.Password);
+            if (!result.Succeeded)
+                return StatusCode(StatusCodes.Status500InternalServerError, new ResponeBase<RegisterModel> { Status = ResponeStatus.InternalServer, Message = "User creation failed! Please check user details and try again." });
+            if (await _roleManager.RoleExistsAsync(UserRoles.User))
+            {
+                await _userManager.AddToRoleAsync(user, UserRoles.User);
+            }
+            return Ok(new ResponeBase<RegisterModel> { Status = ResponeStatus.Success, Message = "User created successfully!" });
+        }
+
+        [HttpPost]
+        [Route("register-admin")]
+        public async Task<IActionResult> RegisterAdmin([FromBody] RegisterModel model)
+        {
+            var userExists = await _userManager.FindByNameAsync(model.Username);
+            if (userExists != null)
+                return StatusCode(StatusCodes.Status500InternalServerError, new ResponeBase<RegisterModel> { Status = ResponeStatus.InternalServer, Message = "User already exists!" });
+
+            User user = new()
+            {
+                Email = model.Email,
+                SecurityStamp = Guid.NewGuid().ToString(),
+                UserName = model.Username
+            };
+            var result = await _userManager.CreateAsync(user, model.Password);
+            if (!result.Succeeded)
+                return StatusCode(StatusCodes.Status500InternalServerError, new ResponeBase<RegisterModel> { Status = ResponeStatus.InternalServer, Message = "User creation failed! Please check user details and try again." });
+
+            if (!await _roleManager.RoleExistsAsync(UserRoles.Admin))
+                await _roleManager.CreateAsync(new IdentityRole(UserRoles.Admin));
+            if (!await _roleManager.RoleExistsAsync(UserRoles.User))
+                await _roleManager.CreateAsync(new IdentityRole(UserRoles.User));
+
+            if (await _roleManager.RoleExistsAsync(UserRoles.Admin))
+            {
+                await _userManager.AddToRoleAsync(user, UserRoles.Admin);
+            }
+            return Ok(new ResponeBase<RegisterModel> { Status = ResponeStatus.Success, Message = "User created successfully!" });
         }
         [HttpGet("{username}")]
         public async Task<ActionResult<UserDto>> GetUser(string username)
         {
-            IdentityUser user = await _userManager.FindByNameAsync(username);
+            var user = await _userManager.FindByNameAsync(username);
 
             if (user == null)
             {
@@ -37,54 +129,6 @@ namespace eStoreAP.Controllers
                 UserName = user.UserName,
                 Email = user.Email
             };
-        }
-        // POST: api/Users
-        [HttpPost]
-        public async Task<ActionResult<UserDto>> PostUser(UserDto user)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var result = await _userManager.CreateAsync(
-                new User() { UserName = user.UserName, Email = user.Email },
-                user.Password
-            );
-
-            if (!result.Succeeded)
-            {
-                return BadRequest(result.Errors);
-            }
-
-            user.Password = null;
-            return Created("", user);
-        }
-        [HttpPost("BearerToken")]
-        public async Task<ActionResult<AuthenticationResponse>> CreateBearerToken(AuthenticationRequest request)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest("Bad credentials");
-            }
-
-            var user = await _userManager.FindByNameAsync(request.UserName);
-
-            if (user == null)
-            {
-                return BadRequest("Bad credentials");
-            }
-
-            var isPasswordValid = await _userManager.CheckPasswordAsync(user, request.Password);
-
-            if (!isPasswordValid)
-            {
-                return BadRequest("Bad credentials");
-            }
-
-            var token = _jwtService.CreateToken(user);
-
-            return Ok(token);
         }
     }
 }
