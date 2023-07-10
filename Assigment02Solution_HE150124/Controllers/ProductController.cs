@@ -1,4 +1,6 @@
 ﻿using BusinessObject;
+using BusinessObject.RequestBody;
+using BusinessObject.RequestBody.PrdoductRequest;
 using DataAccess.Service;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,12 +19,12 @@ namespace eStoreAP.Controllers
             _productService = productService;
         }
         // GET: api/<ValuesController>
-        [HttpGet]
-        public async Task<IActionResult> Get()
+        [HttpPost]
+        public async Task<IActionResult> Get([FromBody] ProductRequestBody requestBody)
         {
             try
             {
-                var result = await _productService.GetPagingList();
+                var result = await _productService.GetPagingList(requestBody);
                 return new JsonResult(new ResponeBase<ProductDto>
                 {
                     Status = ResponeStatus.Success,
@@ -40,23 +42,17 @@ namespace eStoreAP.Controllers
         }
 
         // GET api/<ValuesController>/5
-        [HttpGet("detailProduct/{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
-
-        // POST api/<ValuesController>
-        [HttpPost("addProduct")]
-        public async Task<IActionResult> Post(ProductAddDto value)
+        [HttpGet("detailProduct")]
+        public async Task<IActionResult> Get(string id)
         {
             try
             {
-                var result = await _productService.AddProduct(value);
-                return new JsonResult(result);
-            }catch(Exception ex)
+                var result = await _productService.GetProductById(Guid.Parse(id));
+                return Ok(result);
+            }
+            catch (Exception ex)
             {
-                return new JsonResult(new ResponeBase<ProductAddDto>
+                return new JsonResult(new ResponeBase<ProductDto>
                 {
                     Status = ResponeStatus.InternalServer,
                     Message = ex.Message
@@ -64,10 +60,22 @@ namespace eStoreAP.Controllers
             }
         }
 
-        // DELETE api/<ValuesController>/5
         [HttpDelete("delete/{id}")]
-        public void Delete(int id)
+        public async Task<IActionResult> Delete(Guid id)
         {
+            try
+            {
+                var result = await _productService.RemoveProduct(id);
+                return new JsonResult(result);
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new ResponeBase<ProductAddDto>
+                {
+                    Status = ResponeStatus.InternalServer,
+                    Message = ex.Message
+                });
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using BusinessObject;
+using BusinessObject.Dto;
 using DataAccess;
 using DataAccess.Repository;
 using DataAccess.Service;
@@ -125,6 +126,24 @@ using (var scope = app.Services.CreateScope())
     {
         if (!await roleManager.RoleExistsAsync(role))
             await roleManager.CreateAsync(new IdentityRole(role));
+    }
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+    var email = builder.Configuration["Account:email"];
+    var password = builder.Configuration["Account:password"];
+    var userName = builder.Configuration["Account:userName"];
+
+    var userExists = await userManager.FindByNameAsync(userName);
+    if (userExists == null)
+    {
+        User user = new()
+        {
+            Email = email,
+            SecurityStamp = Guid.NewGuid().ToString(),
+            UserName = userName
+        };
+        var result = await userManager.CreateAsync(user, password);
+        await userManager.AddToRoleAsync(user, UserRoles.Admin);
+
     }
 }
 app.Run();

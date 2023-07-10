@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using BusinessObject;
+using BusinessObject.RequestBody.PrdoductRequest;
 using DataAccess.Repository;
 using System;
 using System.Collections.Generic;
@@ -23,11 +24,15 @@ namespace DataAccess.Service
             _repositoryProduct = repositoryProduct;
             _mapper = mapper;
         }
-        public async Task<IEnumerable<ProductDto>> GetPagingList()
+        public async Task<IEnumerable<ProductDto>> GetPagingList(ProductRequestBody requestBody)
         {
             try
             {
                 var products = await _repositoryProduct.GetList();
+                if(!String.IsNullOrEmpty(requestBody.Name))
+                {
+                    products = products.ToList().Where(x => x.ProductName.Contains(requestBody.Name)).ToList();
+                }
                 return _mapper.Map<List<ProductDto>>(products);
             }
             catch (Exception ex)
@@ -35,6 +40,18 @@ namespace DataAccess.Service
                 throw;
             }
 
+        }
+        public async Task<ProductDto> GetProductById(Guid requestBody)
+        {
+            try
+            {
+                var products = await _repositoryProduct.GetById(requestBody);
+                return _mapper.Map<ProductDto>(products);
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
         public async Task<bool> AddProduct(ProductAddDto product)
         {
@@ -45,6 +62,30 @@ namespace DataAccess.Service
                 return addd;
             }
             catch(Exception ex)
+            {
+                throw;
+            }
+        }
+        public async Task<IEnumerable<ProductDto>> GetProductByIds(ProductRequestBody requestBody)
+        {
+            try
+            {
+                var products = await _repositoryProduct.GetProductByIds(requestBody);
+                return _mapper.Map<List<ProductDto>>(products);
+            }
+            catch(Exception ex)
+            {
+                throw;
+            }
+        }
+        public async Task<bool> RemoveProduct(Guid id)
+        {
+            try
+            {
+                var removeProduct = await _repositoryProduct.Delete(id);
+                return removeProduct;
+            }
+            catch (Exception ex)
             {
                 throw;
             }

@@ -1,4 +1,5 @@
 ﻿using BusinessObject;
+using BusinessObject.RequestBody.PrdoductRequest;
 using Microsoft.EntityFrameworkCore;
 
 namespace DataAccess.Repository
@@ -51,6 +52,16 @@ namespace DataAccess.Repository
             if(product.Count > 0)
             {
                 return product;
+            }
+            return new List<Product>();
+        }
+
+        public async Task<IEnumerable<Product>> GetProductByIds(ProductRequestBody requestBody)
+        {
+            if(requestBody.Id.Count() > 0 || requestBody.Id != null)
+            {
+                var products = await _context.Products.Where(x => x.ProductId.ToString().Equals(requestBody.Id.Select(y => y))).ToListAsync();
+                return products;
             }
             return new List<Product>();
         }
